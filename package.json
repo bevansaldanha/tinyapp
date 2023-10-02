@@ -16,5 +16,8 @@
     "url": "https://github.com/bevansaldanha/tinyapp/issues"
   },
   "homepage": "https://github.com/bevansaldanha/tinyapp#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
