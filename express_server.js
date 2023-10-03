@@ -6,10 +6,10 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 
 function generateRandomString() {
-  const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < 6; i++) {
-    result += characters[Math.floor(Math.random() * characters.length)]
+    result += characters[Math.floor(Math.random() * characters.length)];
   }
   return result;
 }
@@ -29,8 +29,8 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  
-  const shortID = generateRandomString()
+
+  const shortID = generateRandomString();
   urlDatabase[shortID] = req.body.longURL;
   res.redirect(`/urls/${shortID}`);
 });
@@ -40,23 +40,23 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]};
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
 
   res.render("urls_show", templateVars);
 });
-app.post ("/urls/:id", (req,res) => {
+app.post("/urls/:id", (req, res) => {
   urlDatabase[req.params.id] = req.body.longURL;
   res.redirect('/urls');
 });
 
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
-  console.log(urlDatabase)
+  console.log(urlDatabase);
   res.redirect(`/urls`);
 });
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id]
+  const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
 
