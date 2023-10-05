@@ -62,14 +62,14 @@ app.post("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const templateVars = { user_id: users[req.cookies["user_id"]] };
-  
+
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
   const templateVars = {
-    user_id: users[req.cookies["user_id"]], 
-    id: req.params.id, 
+    user_id: users[req.cookies["user_id"]],
+    id: req.params.id,
     longURL: urlDatabase[req.params.id]
   };
 
@@ -88,40 +88,42 @@ app.post("/urls/:id/delete", (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = { user_id: users[req.cookies["user_id"]] };
 
-  res.render("register",templateVars)
+  res.render("register", templateVars);
 });
 
 app.post("/register", (req, res) => {
 
-  if (!req.body.email || !req.body.password || findUserByEmail(req.body.email)) {
+  if (!req.body.email || !req.body.password) {
     res.sendStatus(404);
+  } else if (findUserByEmail(req.body.email)) {
+    res.redirect(`/urls`);
+
   } else {
-  const id = generateRandomString();
-  users[id] = {id,...req.body};
-  res.cookie("user_id", id);
-  res.redirect(`/urls`);
-}
+    const id = generateRandomString();
+    users[id] = { id, ...req.body };
+    res.cookie("user_id", id);
+    res.redirect(`/urls`);
+  }
 
 });
 app.get('/login', (req, res) => {
   const templateVars = { user_id: users[req.cookies["user_id"]] };
 
-  res.render('login',templateVars)
+  res.render('login', templateVars);
 });
 
 app.post('/login', (req, res) => {
-  const user = findUserByEmail(req.body.email).id
-  if (user === null|| req.body.password !== user.password) {
-    console.log(user)
-    res.sendStatus(403)
+  const user = findUserByEmail(req.body.email).id;
+  if (user === null || req.body.password !== users[user].password) {
+    res.sendStatus(403);
   }
-  
+
   res.cookie("user_id", user);
   res.redirect('/urls');
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie("user_id", req.cookies["user_id"]);
+  res.clearCookie("user_id");
   res.redirect('/login');
 });
 
