@@ -54,19 +54,32 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
 
-  const shortID = generateRandomString();
-  urlDatabase[shortID] = req.body.longURL;
+  if (req.cookies.user_id) {
+    console.log(req.body);
 
-  res.redirect(`/urls/${shortID}`);
+    const shortID = generateRandomString();
+    urlDatabase[shortID] = req.body.longURL;
+
+    res.redirect(`/urls/${shortID}`);
+  }
+  res.send("You need to be logged in to create a short URL!");
 });
 
 app.get("/urls/new", (req, res) => {
   const templateVars = { user_id: users[req.cookies["user_id"]] };
+  if (!templateVars.user_id) {
+    res.redirect('/login');
+  } else {
 
-  res.render("urls_new", templateVars);
+    res.render("urls_new", templateVars);
+  }
 });
 
 app.get("/urls/:id", (req, res) => {
+
+  if (!Object.keys(urlDatabase).includes(req.params.id)) {
+    res.send("This ID is not in the database :(");
+  }
   const templateVars = {
     user_id: users[req.cookies["user_id"]],
     id: req.params.id,
@@ -75,6 +88,7 @@ app.get("/urls/:id", (req, res) => {
 
   res.render("urls_show", templateVars);
 });
+
 app.post("/urls/:id", (req, res) => {
   urlDatabase[req.params.id] = req.body.longURL;
   res.redirect('/urls');
@@ -96,7 +110,7 @@ app.post("/register", (req, res) => {
   if (!req.body.email || !req.body.password) {
     res.sendStatus(404);
   } else if (findUserByEmail(req.body.email)) {
-    res.redirect(`/urls`);
+    res.redirect(`/login`);
 
   } else {
     const id = generateRandomString();
