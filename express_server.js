@@ -16,6 +16,16 @@ function generateRandomString() {
   return result;
 }
 
+function urlsForUser(id) {
+  let result = {};
+  for (const shortID in urlDatabase) {
+    if (urlDatabase[shortID].userID === id) {
+      result[shortID] = urlDatabase[shortID].longURL;
+    }
+  }
+  return result;
+}
+
 const users = {
   userRandomID: {
     id: "userRandomID",
@@ -39,8 +49,14 @@ function findUserByEmail(email) {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "userRandomID",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "userRandomID",
+  },
 };
 
 app.get("/", (req, res) => {
@@ -48,21 +64,28 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { user_id: users[req.cookies["user_id"]], urls: urlDatabase };
-  res.render("urls_index", templateVars);
+  const user_id = users[req.cookies["user_id"]];
+  if (!user_id) {
+    res.send("You need to sign up or log in!");
+  } else {
+
+    const templateVars = { user_id, urls: urlsForUser(user_id.id) };
+
+    res.render("urls_index", templateVars);
+  }
 });
 
 app.post("/urls", (req, res) => {
 
   if (req.cookies.user_id) {
-    console.log(req.body);
 
     const shortID = generateRandomString();
-    urlDatabase[shortID] = req.body.longURL;
+    urlDatabase[shortID] = { longURL: req.body.longURL, userID: req.cookies.user_id };
 
     res.redirect(`/urls/${shortID}`);
+  } else {
+    res.send("You need to be logged in to create a short URL!");
   }
-  res.send("You need to be logged in to create a short URL!");
 });
 
 app.get("/urls/new", (req, res) => {
@@ -76,27 +99,47 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
+  const user_id = req.cookies.user_id;
+  console.log(user_id)
 
-  if (!Object.keys(urlDatabase).includes(req.params.id)) {
-    res.send("This ID is not in the database :(");
+  if (!user_id || user_id !== urlDatabase[req.params.id].userID) {
+    res.send("Only the account holder can view this page!");
   }
-  const templateVars = {
-    user_id: users[req.cookies["user_id"]],
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id]
-  };
 
-  res.render("urls_show", templateVars);
+  else if (!Object.keys(urlDatabase).includes(req.params.id)) {
+    res.send("This ID is not in the database :(");
+  } else {
+    const templateVars = {
+      user_id,
+      id: req.params.id,
+      longURL: urlDatabase[req.params.id].longURL
+    };
+
+    res.render("urls_show", templateVars);
+  }
 });
 
 app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = req.body.longURL;
+  console.log(req.params + "HERE")
+
+  if(!req.cookies.user_id || req.cookies.user_id !== urlDatabase[req.params.id].userID) {
+    res.send("Only the owner of the Short URL can edit, sorry! If this is your Short URL, please log in to edit it!")
+
+  }else{
+  urlDatabase[req.params.id].longURL = req.body.longURL;
   res.redirect('/urls');
+}
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect(`/urls`);
+
+  if(!req.cookies.user_id || req.cookies.user_id !== urlDatabase[req.params.id].userID) {
+    res.send("Only the owner of the Short URL can delete, sorry! If this is your Short URL, please log in to delete it!");
+
+  }else {
+    delete urlDatabase[req.params.id];
+    res.redirect(`/urls`);
+  }
 });
 
 app.get("/register", (req, res) => {
@@ -127,13 +170,14 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  const user = findUserByEmail(req.body.email).id;
-  if (user === null || req.body.password !== users[user].password) {
+  const user = findUserByEmail(req.body.email);
+  if (!user || req.body.password !== user.password) {
     res.sendStatus(403);
-  }
+  } else {
 
-  res.cookie("user_id", user);
-  res.redirect('/urls');
+    res.cookie("user_id", user.id);
+    res.redirect('/urls');
+  }
 });
 
 app.post('/logout', (req, res) => {
@@ -142,7 +186,7 @@ app.post('/logout', (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 
