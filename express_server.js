@@ -13,6 +13,7 @@ app.use(cookieSession({
   keys: ['vsjdnvuseiovn']
 }));
 
+//creates a random string 
 function generateRandomString() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -22,6 +23,7 @@ function generateRandomString() {
   return result;
 }
 
+// return an object of shortUrls and their matching longUrls for a given user
 function urlsForUser(id) {
   let result = {};
   for (const shortID in urlDatabase) {
@@ -45,7 +47,7 @@ const users = {
   },
 };
 
-
+//url database, which stores all the shortUrls, with longURL and user who created it
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -57,12 +59,16 @@ const urlDatabase = {
   },
 };
 
+// Get route for landing page
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+//get route for urls
 app.get("/urls", (req, res) => {
   const user_id = users[req.session.user_id];
+
+  //checks if user is logged in, and only then displays urls_index
   if (!user_id) {
     res.send("You need to sign up or log in!");
   } else {
@@ -73,8 +79,10 @@ app.get("/urls", (req, res) => {
   }
 });
 
+//post route for urls - adds a new shortURL
 app.post("/urls", (req, res) => {
 
+  //checks if user is logged in, and only then add new shortURL
   if (req.session.user_id) {
 
     const shortID = generateRandomString();
@@ -86,6 +94,7 @@ app.post("/urls", (req, res) => {
   }
 });
 
+// checks if user is logged in, and only then renders urls_new, allowing user to add a new form
 app.get("/urls/new", (req, res) => {
   const templateVars = { user_id: users[req.session.user_id] };
   if (!templateVars.user_id) {
@@ -96,16 +105,25 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
+
+//checks if user is logged in, then if the urlDatabase contains the URL and then if the shortURL belongs to the logged in user, and only then renders the corresponding page
 app.get("/urls/:id", (req, res) => {
   const user_id = req.session.user_id;
+  console.log(user_id);
 
-  if (!user_id || user_id !== urlDatabase[req.params.id].userID) {
-    res.send("Only the account holder can view this page!");
+  if (!user_id) {
+    res.send("You need to be logged in to view this page");
   }
 
   else if (!Object.keys(urlDatabase).includes(req.params.id)) {
     res.send("This ID is not in the database :(");
+
+  } else if (user_id !== urlDatabase[req.params.id].userID) {
+
+    res.send("Only the account holder can view this page!");
+
   } else {
+
     const templateVars = {
       user_id,
       id: req.params.id,
@@ -116,6 +134,8 @@ app.get("/urls/:id", (req, res) => {
   }
 });
 
+
+//checks if there is a user logged in, and if the id belongs to the account holder, and only then allows the longURL to be edited
 app.post("/urls/:id", (req, res) => {
 
   if (!req.session.user_id || req.session.user_id !== urlDatabase[req.params.id].userID) {
@@ -127,6 +147,8 @@ app.post("/urls/:id", (req, res) => {
   }
 });
 
+
+//checks if there is a user logged in, and if the id belongs to the account holder, and only then allows the longURL to be deleted
 app.post("/urls/:id/delete", (req, res) => {
 
   if (!req.session.user_id || req.session.user_id !== urlDatabase[req.params.id].userID) {
@@ -138,6 +160,7 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 });
 
+//renders register page, unless user is logged in, in which case they are redirect to the /urls
 app.get("/register", (req, res) => {
   const templateVars = { user_id: users[req.session.user_id] };
   if (templateVars.user_id) {
@@ -148,13 +171,20 @@ app.get("/register", (req, res) => {
   }
 });
 
+//takes data from the register form
 app.post("/register", (req, res) => {
 
+
+  // and checks if there is information for the username and password, sends 404 error if not
   if (!req.body.email || !req.body.password) {
     res.sendStatus(404);
+
+    // redirects user to login page if email has already been registered
   } else if (findUserByEmail(req.body.email, users)) {
     res.redirect(`/login`);
 
+
+    //creates user by created a random id, hashing the given password, and adding them to the users object that tracks all registered users. Also creates a cookie for the user, and logs them in 
   } else {
     const id = generateRandomString();
     const hashedPassword = bcrypt.hashSync(req.body.password, 10);
@@ -165,25 +195,33 @@ app.post("/register", (req, res) => {
   }
 
 });
+
+//renders login page, but redirects user to /urls if they are logged in
 app.get('/login', (req, res) => {
   const templateVars = { user_id: users[req.session.user_id] };
 
-  res.render('login', templateVars);
+  if (user_id) {
+    res.redirect('/urls');
+  } else {
+
+    res.render('login', templateVars);
+  }
 });
 
+// searches for user by email, if there is no user, or the password is incorrect it throws an error, otherwise it logs the user in and sets a cookie for the user.
 app.post('/login', (req, res) => {
   const user = findUserByEmail(req.body.email, users);
   if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
     res.send("The email or password is incorrect, or the email has not been registered!");
   } else {
 
-    // res.cookie(req.session.user_id, user.id);
     req.session.user_id = user.id;
 
     res.redirect('/urls');
   }
 });
 
+// logs user out, clears cookies
 app.post('/logout', (req, res) => {
   res.clearCookie(req.session.user_id);
 
@@ -192,15 +230,13 @@ app.post('/logout', (req, res) => {
   res.redirect('/login');
 });
 
+
+// redirects shortURL to longURL
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
