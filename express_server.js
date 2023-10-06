@@ -124,7 +124,7 @@ app.get("/urls/:id", (req, res) => {
   } else {
 
     const templateVars = {
-      user_id,
+      user_id: users[req.session.user_id],
       id: req.params.id,
       longURL: urlDatabase[req.params.id].longURL
     };
