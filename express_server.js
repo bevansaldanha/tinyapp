@@ -61,7 +61,12 @@ const urlDatabase = {
 
 // Get route for landing page
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.session.user_id) {
+    res.redirect('/urls');
+  } else {
+    res.redirect("/login");
+  }
+
 });
 
 //get route for urls
@@ -176,7 +181,7 @@ app.post("/register", (req, res) => {
 
   // and checks if there is information for the username and password, sends 404 error if not
   if (!req.body.email || !req.body.password) {
-    res.sendStatus(404);
+    res.send("Oops, it looks like the email or password field was left blank");
 
     // redirects user to login page if email has already been registered
   } else if (findUserByEmail(req.body.email, users)) {
@@ -221,18 +226,21 @@ app.post('/login', (req, res) => {
 
 // logs user out, clears cookies
 app.post('/logout', (req, res) => {
-  res.clearCookie(req.session.user_id);
-
-  req.session.user_id = null;
-
+  req.session = null;
   res.redirect('/login');
 });
 
 
-// redirects shortURL to longURL
+// checks if shortUrl exists, then redirects shortURL to longURL or sends out error in html
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id].longURL;
-  res.redirect(longURL);
+  let longURL = urlDatabase[req.params.id];
+  if (longURL){
+  let longURL = urlDatabase[req.params.id].longURL;
+
+    res.redirect(longURL);
+  } else {
+    res.send("Oops, it looks like that does not exist")
+  }
 });
 
 

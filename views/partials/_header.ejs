@@ -15,16 +15,23 @@
         <form method="post" action="/logout">
           <h6 class="float-right"> Logged in as: <%= user_id.email %>
           </h6>
-          <button type="submit" class="btn btn-primary.navbar-btn">logout</button>
+          <button type="submit" class="btn btn-primary.navbar-btn ml-5">logout</button>
 
         </form>
 
         <%} else {%>
           <form method="get" action="/register">
             <button
-              type="submit" class="btn btn-primary">Register</button>
+              type="submit" class="btn btn-primary ml-2 mr-2">Register</button>
 
           </form>
+
+          <form method="get" action="/login" class="float-right">
+            <button
+              type="submit" class="btn btn-primary">Login</button>
+
+          </form>
+
           <%}%>
 
 
