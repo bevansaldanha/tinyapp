@@ -109,8 +109,6 @@ app.get("/urls/new", (req, res) => {
 //checks if user is logged in, then if the urlDatabase contains the URL and then if the shortURL belongs to the logged in user, and only then renders the corresponding page
 app.get("/urls/:id", (req, res) => {
   const user_id = req.session.user_id;
-  console.log(user_id);
-
   if (!user_id) {
     res.send("You need to be logged in to view this page");
   }
@@ -189,7 +187,6 @@ app.post("/register", (req, res) => {
     const id = generateRandomString();
     const hashedPassword = bcrypt.hashSync(req.body.password, 10);
     users[id] = { id, email: req.body.email, password: hashedPassword };
-    // res.cookie("user_id", id);
     req.session.user_id = id;
     res.redirect(`/urls`);
   }
