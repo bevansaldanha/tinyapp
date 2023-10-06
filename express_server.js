@@ -109,6 +109,7 @@ app.get("/urls/new", (req, res) => {
 //checks if user is logged in, then if the urlDatabase contains the URL and then if the shortURL belongs to the logged in user, and only then renders the corresponding page
 app.get("/urls/:id", (req, res) => {
   const user_id = req.session.user_id;
+
   if (!user_id) {
     res.send("You need to be logged in to view this page");
   }
@@ -197,7 +198,7 @@ app.post("/register", (req, res) => {
 app.get('/login', (req, res) => {
   const templateVars = { user_id: users[req.session.user_id] };
 
-  if (user_id) {
+  if (templateVars.user_id) {
     res.redirect('/urls');
   } else {
 
